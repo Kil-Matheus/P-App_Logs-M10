@@ -1,0 +1,103 @@
+version: '3.1'
+
+services:
+  db:
+    build:
+      context: ./backend_auth/db
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+
+  backend_auth:
+    build:
+      context: ./backend_auth/app
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+
+  filtro_app:
+    build:
+      context: ./backend_auth/filtro
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "5001:5001"
+    depends_on:
+      - db
+
+  log:
+    build:
+      context: ./backend_auth/log
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "5002:5002"
+    depends_on:
+      - db
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  backend:
+    build: ./sistema03/backend/
+    ports:
+      - "8001:8001"
+    container_name: backend
+    volumes:
+      - ./logs:/app/logs
+
+  filebeat:
+    build: ./sistema03/filebeat/
+    container_name: filebeat
+    volumes:
+      - ./logs:/src/logs
+    depends_on:
+      - backend
+      - elasticsearch
+      - kibana
+    network_mode: "host"
+
+  elasticsearch:
+    build: ./sistema03/elasticsearch/
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  kibana:
+    build: ./sistema03/kibana/
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+ 
+  gateway:
+    build: ./gateway
+    restart: always
+    ports:
+      - "8000:80"
+    volumes:
+      - ./app:/usr/share/nginx/html
+      - ./logs:/var/log/nginx
+    depends_on:
+      - backend_auth
+      - filtro_app
+    
+volumes:
+    elasticsearch_data:
+        driver: local
