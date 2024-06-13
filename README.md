@@ -78,3 +78,7 @@ Após rodar o ***docker compose up***, acesse o arquivo access.log, app.log e er
 - /
 - /usuários
 - /produtos
+
+## Arquiterura
+
+![Arquitetura](/img/arquitetura_page.jpg)
